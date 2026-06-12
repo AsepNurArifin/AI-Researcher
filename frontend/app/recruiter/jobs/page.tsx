@@ -1,30 +1,34 @@
-import Link from "next/link";
+"use client";
 
-const jobPostings = [
-  {
-    title: "AI Research Assistant",
-    slug: "ai-research-assistant",
-    status: "Active",
-    candidates: 12,
-    updated: "Today",
-  },
-  {
-    title: "ML Engineer",
-    slug: "ml-engineer",
-    status: "Draft",
-    candidates: 0,
-    updated: "May 10",
-  },
-  {
-    title: "Data Scientist",
-    slug: "data-scientist",
-    status: "Closed",
-    candidates: 28,
-    updated: "Apr 22",
-  },
-];
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, getToken } from "@/lib/api";
 
 export default function RecruiterJobsPage() {
+  const router = useRouter();
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      router.push("/auth/login");
+      return;
+    }
+    const fetchJobs = async () => {
+      try {
+        const data = await api.getJobs();
+        setJobs(data);
+      } catch (err) {
+        console.error("Failed to load jobs:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, [router]);
+
   return (
     <div className="bg-slate-950">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12">
@@ -34,8 +38,7 @@ export default function RecruiterJobsPage() {
           </p>
           <h1 className="text-3xl font-semibold text-white">Job postings</h1>
           <p className="max-w-2xl text-sm text-slate-300">
-            Track role status, candidate volume, and open details to view ranked
-            applicants.
+            Track role status, candidate volume, and open details to view ranked applicants.
           </p>
         </header>
 
@@ -45,43 +48,41 @@ export default function RecruiterJobsPage() {
               <h2 className="text-lg font-semibold text-white">
                 Active job listings
               </h2>
-              <button
-                type="button"
-                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white"
+              <Link
+                href="/recruiter"
+                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition"
               >
                 Create new job
-              </button>
+              </Link>
             </div>
             <div className="space-y-3">
-              {jobPostings.map((job) => (
-                <div
-                  key={job.title}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-slate-950/60 p-4 text-sm text-slate-200"
-                >
-                  <div>
-                    <Link
-                      href={`/recruiter/jobs/${job.slug}`}
-                      className="font-semibold text-white transition hover:text-emerald-200"
-                    >
-                      {job.title}
-                    </Link>
-                    <p className="text-xs text-slate-400">
-                      {job.candidates} candidates · Updated {job.updated}
-                    </p>
-                  </div>
-                  <span
-                    className={
-                      job.status === "Active"
-                        ? "rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-semibold text-emerald-200"
-                        : job.status === "Draft"
-                          ? "rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-200"
-                          : "rounded-full bg-slate-400/20 px-3 py-1 text-xs font-semibold text-slate-200"
-                    }
+              {loading ? (
+                <p className="text-sm text-slate-400">Loading jobs...</p>
+              ) : jobs.length > 0 ? (
+                jobs.map((job: any) => (
+                  <div
+                    key={job.id}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-slate-950/60 p-4 text-sm text-slate-200"
                   >
-                    {job.status}
-                  </span>
-                </div>
-              ))}
+                    <div>
+                      <Link
+                        href={`/recruiter/jobs/${job.id}`}
+                        className="font-semibold text-white transition hover:text-emerald-200"
+                      >
+                        {job.title}
+                      </Link>
+                      <p className="text-xs text-slate-400">
+                        {job.skills?.length || 0} skills
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-semibold text-emerald-200">
+                      Active
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">No job postings yet. Create one from the dashboard.</p>
+              )}
             </div>
           </div>
 
@@ -98,17 +99,17 @@ export default function RecruiterJobsPage() {
               {[
                 {
                   label: "Average match score",
-                  value: "78%",
+                  value: jobs.length > 0 ? "—" : "—",
                   helper: "Top 10 candidates",
                 },
                 {
                   label: "Resumes processed",
-                  value: "143",
+                  value: "—",
                   helper: "Past 30 days",
                 },
                 {
                   label: "Shortlisted candidates",
-                  value: "18",
+                  value: "—",
                   helper: "Awaiting review",
                 },
               ].map((metric) => (

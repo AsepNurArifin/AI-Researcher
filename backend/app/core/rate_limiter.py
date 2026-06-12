@@ -24,3 +24,11 @@ class RateLimiter:
 
         entries.append(now)
         self.requests[client] = entries
+
+        # Cleanup stale clients periodically to prevent memory leak
+        if len(self.requests) > 1000:
+            self.requests = {
+                k: v for k, v in self.requests.items()
+                if v and now - v[-1] < self.window_seconds * 2
+            }
+

@@ -1,4 +1,79 @@
+# ========================
+# Root — hanya track frontend & backend
+# ========================
+/*
+!/frontend/
+!/backend/
+
+# ========================
+# Python / Backend
+# ========================
+.venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Node.js / Frontend
+# ========================
 node_modules/
 .next/
-.env
+frontend/.next/
 dist/
+out/
+*.tsbuildinfo
+
+# ========================
+# IDE & Editor
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========================
+# OS Generated
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# Database
+# ========================
+*.db
+*.sqlite3
+
+# ========================
+# Logs & Cache
+# ========================
+*.log
+npm-debug.log*
+
+# ========================
+# AI Model Cache
+# ========================
+backend/models/
+*.bin
+*.onnx
+
+# ========================
+# Internal / AI tools
+# ========================
+.gemini/
+start_local.bat

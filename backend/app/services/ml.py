@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import List
+
+logger = logging.getLogger("hiresense")
 
 
 class EmbeddingService:
@@ -9,22 +12,23 @@ class EmbeddingService:
     @classmethod
     def get_model(cls):
         if cls._model is None:
-            # Import sentence-transformers inside to keep app startup fast
-            from sentence_transformers import SentenceTransformer
-            cls._model = SentenceTransformer("all-MiniLM-L6-v2")
+            from fastembed import TextEmbedding
+            cls._model = TextEmbedding(
+                model_name="BAAI/bge-small-en-v1.5",
+                max_length=512,
+            )
         return cls._model
 
     @classmethod
     def get_embedding(cls, text: str) -> List[float]:
         if not text or not text.strip():
-            # return a zero vector of dimension 384
             return [0.0] * 384
-        
+
         try:
             model = cls.get_model()
-            embedding_array = model.encode(text)
-            return [float(x) for x in embedding_array]
+            embedding_generator = model.embed(text)
+            embedding = list(embedding_generator)[0]
+            return [float(x) for x in embedding]
         except Exception as e:
-            print(f"Error generating embedding: {e}")
-            # Fallback to zero vector
+            logger.error("Error generating embedding: %s", e)
             return [0.0] * 384

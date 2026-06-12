@@ -9,7 +9,7 @@ from .parsing import extract_skills
 def extract_job_skills(description: str, skills_hint: List[str] | None = None) -> List[str]:
     hints = [skill.strip() for skill in (skills_hint or []) if skill.strip()]
     inferred = extract_skills(description)
-    combined = {skill for skill in hints + inferred}
+    combined = {skill.title() for skill in hints + inferred}
     return sorted(combined)
 
 

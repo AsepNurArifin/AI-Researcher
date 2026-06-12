@@ -1,32 +1,49 @@
 from __future__ import annotations
 
 import io
+import logging
 import re
 from typing import Dict, List
 
 import docx
 import fitz  # PyMuPDF
 
+logger = logging.getLogger("hiresense")
 
 SKILL_KEYWORDS = [
-    "python",
-    "nlp",
-    "fastapi",
-    "postgresql",
-    "pgvector",
-    "docker",
-    "spacy",
-    "pytorch",
-    "tensorflow",
-    "sql",
-    "react",
-    "typescript",
-    "mlops",
-    "aws",
-    "scikit-learn",
-    "sentence-transformers",
-    "vector",
-    "semantic search",
+    # Programming Languages
+    "python", "java", "javascript", "typescript", "c++", "c#", "go", "rust",
+    "ruby", "php", "swift", "kotlin", "scala", "r", "matlab", "perl", "dart",
+    # Web Frameworks & Libraries
+    "react", "angular", "vue", "next.js", "express", "django", "flask", "fastapi",
+    "spring boot", "laravel", "rails", "svelte",
+    # Mobile
+    "react native", "flutter", "android", "ios",
+    # Data & AI/ML
+    "nlp", "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy",
+    "machine learning", "deep learning", "computer vision", "data science",
+    "data analysis", "data engineering", "big data",
+    "spacy", "sentence-transformers", "hugging face", "keras",
+    # Databases
+    "sql", "postgresql", "mysql", "mongodb", "redis", "elasticsearch",
+    "pgvector", "firebase", "supabase", "sqlite", "oracle", "cassandra",
+    # Cloud & DevOps
+    "aws", "azure", "gcp", "docker", "kubernetes", "terraform", "ansible",
+    "ci/cd", "jenkins", "github actions", "gitlab ci",
+    # Tools & Platforms
+    "git", "linux", "nginx", "apache", "graphql", "rest api",
+    "microservices", "kafka", "rabbitmq",
+    # Data Visualization
+    "tableau", "power bi", "matplotlib", "d3.js",
+    # Other Tech
+    "blockchain", "web3", "cybersecurity", "networking",
+    "agile", "scrum", "mlops", "devops",
+    "html", "css", "sass", "tailwind",
+    "node.js", "webpack", "vite",
+    # Semantic / Vector
+    "vector", "semantic search", "embedding",
+    # Soft skills / methodologies
+    "project management", "leadership", "communication",
 ]
 
 
@@ -35,12 +52,22 @@ def sanitize_filename(filename: str) -> str:
     return safe.strip("._") or "resume_upload"
 
 
+def detect_file_type(file_bytes: bytes) -> Optional[str]:
+    if file_bytes.startswith(b"%PDF"):
+        return "pdf"
+    elif file_bytes.startswith(b"PK\x03\x04"):
+        # Both ZIP and DOCX start with PK\x03\x04
+        return "docx"
+    return None
+
+
 def extract_text(file_bytes: bytes) -> str:
     if not file_bytes:
         return ""
 
-    # Check for PDF signature (%PDF-)
-    if file_bytes.startswith(b"%PDF"):
+    file_type = detect_file_type(file_bytes)
+
+    if file_type == "pdf":
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             text = ""
@@ -48,31 +75,33 @@ def extract_text(file_bytes: bytes) -> str:
                 text += page.get_text()
             return text
         except Exception as e:
-            # Fallback/logging
-            print(f"Error parsing PDF with PyMuPDF: {e}")
+            logger.error("Error parsing PDF with PyMuPDF: %s", e)
             return ""
 
-    # Check for Zip/DOCX signature (PK\x03\x04)
-    elif file_bytes.startswith(b"PK\x03\x04"):
+    elif file_type == "docx":
         try:
             doc = docx.Document(io.BytesIO(file_bytes))
             return "\n".join([p.text for p in doc.paragraphs])
         except Exception as e:
-            # Fallback/logging
-            print(f"Error parsing DOCX with python-docx: {e}")
+            logger.error("Error parsing DOCX with python-docx: %s", e)
             return ""
 
-    # Default fallback to UTF-8 text decoding
-    try:
-        return file_bytes.decode("utf-8", errors="ignore")
-    except Exception:
-        return ""
+    return ""
 
+
+ACRONYMS = {"nlp", "sql", "aws", "mlops", "ai", "api", "ui", "ux", "ci", "cd",
+             "gcp", "html", "css", "ios", "ci/cd", "d3.js"}
+
+def _format_skill(skill: str) -> str:
+    if skill.lower() in ACRONYMS:
+        return skill.upper()
+    return skill.title()
 
 def extract_skills(text: str) -> List[str]:
     text_lower = text.lower()
-    skills = [skill for skill in SKILL_KEYWORDS if skill in text_lower]
-    return sorted(set(skill.title() if skill != "nlp" else "NLP" for skill in skills))
+    pattern = r'\b' + r'\b|\b'.join(re.escape(s) for s in SKILL_KEYWORDS) + r'\b'
+    skills = [skill for skill in SKILL_KEYWORDS if re.search(r'\b' + re.escape(skill) + r'\b', text_lower)]
+    return sorted(set(_format_skill(skill) for skill in skills))
 
 
 def extract_sections(text: str) -> Dict[str, str]:

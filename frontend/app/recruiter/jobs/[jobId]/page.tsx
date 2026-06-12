@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState, use } from "react";
-import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function JobDetailPage({
@@ -92,7 +91,7 @@ export default function JobDetailPage({
                       {c.candidate_name}
                     </span>
                     <span className="text-emerald-300">{Math.round(c.match_percentage)}%</span>
-                    <span>{c.semantic_relevance.toFixed(2)}</span>
+                    <span>{c.semantic_relevance?.toFixed(2) || "—"}</span>
                     <span>{c.missing_skills?.length || 0} missing</span>
                     <span>Reviewing</span>
                   </div>
@@ -129,9 +128,9 @@ export default function JobDetailPage({
                   Minimum match score
                   <input
                     type="range"
-                    min="60"
+                    min="0"
                     max="100"
-                    defaultValue="80"
+                    defaultValue="0"
                     className="accent-emerald-400"
                   />
                 </label>
@@ -151,12 +150,13 @@ export default function JobDetailPage({
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              className="w-full rounded-lg border border-white/20 px-4 py-3 text-sm font-semibold text-white"
-            >
-              Export candidate list
-            </button>
+              <button
+                type="button"
+                onClick={() => alert("Export feature coming soon")}
+                className="w-full rounded-lg border border-white/20 px-4 py-3 text-sm font-semibold text-white"
+              >
+                Export candidate list
+              </button>
           </div>
         </section>
       </div>

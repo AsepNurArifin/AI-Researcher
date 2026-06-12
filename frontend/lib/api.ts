@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export function getToken() {
   if (typeof window !== "undefined") {
@@ -16,6 +16,20 @@ export function setToken(token: string) {
 export function removeToken() {
   if (typeof window !== "undefined") {
     localStorage.removeItem("token");
+  }
+}
+
+export function getUserRole(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    const decoded = JSON.parse(new TextDecoder().decode(
+      Uint8Array.from(atob(payload), (c) => c.charCodeAt(0))
+    ));
+    return decoded.role || null;
+  } catch (e) {
+    return null;
   }
 }
 
@@ -66,13 +80,20 @@ export const api = {
     return apiFetch("/upload-resume", { method: "POST", body: formData });
   },
   getResumeAnalysis: (resumeId: string) => apiFetch(`/resume-analysis/${resumeId}`),
+  getResumes: () => apiFetch("/resumes").then((res: any) => res.items),
+  deleteResume: (resumeId: string) => apiFetch(`/resumes/${resumeId}`, { method: "DELETE" }),
 
   // Jobs endpoints
   createJob: (data: any) => apiFetch("/jobs", { method: "POST", body: JSON.stringify(data) }),
-  getJobs: () => apiFetch("/jobs"),
+  getJobs: () => apiFetch("/jobs").then((res: any) => res.items),
   getJobCandidates: (jobId: string) => apiFetch(`/jobs/${jobId}/candidates`),
+  updateJob: (jobId: string, data: any) => apiFetch(`/jobs/${jobId}`, { method: "PUT", body: JSON.stringify(data) }),
+  applyJob: (jobId: string) => apiFetch(`/jobs/${jobId}/apply`, { method: "POST" }),
+  checkAppliedStatus: (jobId: string) => apiFetch(`/jobs/${jobId}/applied`),
 
   // Matches endpoints
   matchJob: (data: { resume_id: string; job_description: string; job_title?: string }) =>
     apiFetch(`/match-job`, { method: "POST", body: JSON.stringify(data) }),
+  getMatches: () => apiFetch("/matches").then((res: any) => res.items),
 };
+
