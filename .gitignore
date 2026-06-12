@@ -77,3 +77,4 @@ backend/models/
 # ========================
 .gemini/
 start_local.bat
+docs
